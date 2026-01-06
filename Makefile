@@ -1,8 +1,8 @@
 SHELL = /bin/sh
 CC = gcc
-CFLAGS = -Wall -pedantic -Werror -Wextra
+CFLAGS = -Wall -pedantic -Werror -Wextra $(shell curl-config --cflags)
 LDFLAGS = 
-LIBS = 
+LIBS = $(shell curl-config --libs)
 
 SRCDIR = src
 BUILDDIR = build
