@@ -7,7 +7,7 @@ LIBS = $(shell curl-config --libs)
 SRCDIR = src
 BUILDDIR = build
 
-SRCS = main.c
+SRCS = main.c utils.c
 OBJS = $(patsubst %.c,$(BUILDDIR)/%.o,$(filter-out main.c,$(SRCS)))
 MAIN_OBJ = $(BUILDDIR)/main.o
 
