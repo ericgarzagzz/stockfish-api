@@ -39,6 +39,7 @@ int download_stockfish_executable() {
 		// TODO: Support Windows and MacOS as well (once cross-platform compilation is implemented)
 		char* download_url = "https://github.com/official-stockfish/Stockfish/releases/download/sf_17.1/stockfish-ubuntu-x86-64.tar";
 		curl_easy_setopt(curl, CURLOPT_URL, download_url);
+		curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 		curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_cb);
 
