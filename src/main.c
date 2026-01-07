@@ -4,6 +4,9 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <string.h>
+#include <stdbool.h>
+
+static const char *stockfish_tar_filename = ".cache/stockfish.tar";
 
 static size_t write_cb(void *ptr, size_t size, size_t nmemb, void *stream) {
 	size_t written = fwrite(ptr, size, nmemb, (FILE *)stream);
@@ -20,6 +23,11 @@ int ensure_directory_exists(const char *path) {
 		}
 	}
 	return 0;
+}
+
+bool check_file_accessible(const char *path) {
+	struct stat st = {0};
+	return stat(path, &st) == 0;
 }
 
 int download_stockfish_executable() {
@@ -46,9 +54,7 @@ int download_stockfish_executable() {
 	curl_easy_setopt(curl, CURLOPT_URL, download_url);
 	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 	curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_cb);
-
-	static const char *stockfish_tar_filename = ".cache/stockfish.tar";
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_cb);	
 
 	if (ensure_directory_exists(".cache") != 0) {
 		curl_easy_cleanup(curl);
@@ -78,15 +84,18 @@ int main(int argc, char** argv) {
 		printf("Argument %d: %s\n", (i+1), argv[i]);
 	}
 
-	printf("Downloading stockfish...\n");
+	printf("Setting up stockfish...\n");
+	if (!check_file_accessible(stockfish_tar_filename)) {
+		printf("Downloading stockfish...\n");
 
-	int download_rc = download_stockfish_executable();
+		int download_rc = download_stockfish_executable();
 
-	if (download_rc != CURLE_OK) {
-		return 1;
+		if (download_rc != CURLE_OK) {
+			return 1;
+		}
+
+		printf("Stockfish has been downloaded.\n");
 	}
-
-	printf("Stockfish has been downloaded.\n");
 
 	return 0;
 }
