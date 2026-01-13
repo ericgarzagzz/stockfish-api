@@ -75,7 +75,8 @@ int main(int argc, char** argv) {
 		printf("Stockfish has been downloaded.\n");
 	}
 
-	extract_tar(stockfish_tar_filename);
+	const char *rootdir = ".cache/";
+	extract_tar(stockfish_tar_filename, rootdir);
 
 	return 0;
 }

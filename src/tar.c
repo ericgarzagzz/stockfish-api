@@ -1,8 +1,16 @@
 #include "tar.h"
 #include "utils.h"
+#include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <assert.h>
 
-bool extract_tar_item(struct posix_header *hdr, FILE *tar_file) {
+bool extract_tar_item(struct posix_header *hdr, FILE *tar_file, const char *rootdir) {
+	size_t output_path_length = strlen(rootdir) + strlen(hdr->name) + 1;
+	char output_path[output_path_length];
+	strcpy(output_path, rootdir);
+	strcat(output_path, hdr->name);
+
 	/* Switch for type flag matching */
 	if (hdr->typeflag == REGTYPE || hdr->typeflag == AREGTYPE) {
 		printf("Extracting file: %s...\n", hdr->name);
@@ -28,21 +36,51 @@ bool extract_tar_item(struct posix_header *hdr, FILE *tar_file) {
 		return false;
 	}
 
+
+	if (hdr->typeflag == DIRTYPE) {
+		printf("Creating directory...\n");
+		mkdir(output_path, 0700); // TODO: Get mode from tar header
+		return true;
+	}
+	FILE* output_file;
+	output_file = fopen(output_path, "ab");
+	if (!output_file) {
+		fprintf(stderr, "Failed to open or create file at path %s\n", output_path);
+		return false;
+	}
+
 	size_t blocks = (file_size + 511) / 512;
 	for (size_t i = 0; i < blocks; i++) {
 		char buf[TAR_BLOCK_SIZE];
 		if (fread(buf, TAR_BLOCK_SIZE, 1, tar_file) != 1) {
 			fprintf(stderr, "Unexpected EOF reading file data\n");
+			fclose(output_file);
 			return false;
 		}
 
-		// TODO: Write buffer to output file or create a directory
+		// TODO: Write buffer to output file or create a directory	
+		if (fwrite(buf, sizeof(buf), 1, output_file) != 1) {
+			fprintf(stderr, "Failed to write extracted data into file\n");
+			fclose(output_file);
+			return false;
+		}
 	}
+
+	fclose(output_file);
 
 	return true;
 }
 
-int extract_tar(const char* path) {
+int extract_tar(const char* path, const char *rootdir) {
+	assert(rootdir[strlen(rootdir) - 1] == '/');
+	printf("Extracting into rootdir: %s", rootdir);
+
+	if (ensure_directory_exists(rootdir) != 0) {
+		fprintf(stderr, "Failed to access the root directory: %s\n", rootdir);
+		return -1;
+	}
+
+
 	if (!check_file_accessible(path)) {
 		fprintf(stderr, "Failed to find tar ball at %s\n", path);
 		return -1;
@@ -61,7 +99,7 @@ int extract_tar(const char* path) {
 			break;
 		}
 
-		if (!extract_tar_item(&hdr, f)) {
+		if (!extract_tar_item(&hdr, f, rootdir)) {
 			fprintf(stderr, "Failed to extract %s\n", hdr.name);
 			fclose(f);
 			return -1;

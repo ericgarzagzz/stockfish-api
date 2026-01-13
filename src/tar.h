@@ -42,7 +42,7 @@ struct posix_header
 
 #define TAR_BLOCK_SIZE 512
 
-bool extract_tar_item(struct posix_header *hdr, FILE *tar_file);
-int extract_tar(const char* path);
+bool extract_tar_item(struct posix_header *hdr, FILE *tar_file, const char *rootdir);
+int extract_tar(const char* path, const char *rootdir);
 
 #endif
