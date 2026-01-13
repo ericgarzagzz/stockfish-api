@@ -1,6 +1,6 @@
 SHELL = /bin/sh
 CC = gcc
-CFLAGS = -Wall -pedantic -Werror -Wextra -g -O0 $(shell curl-config --cflags)
+CFLAGS = -Wall -pedantic -Werror -Wextra -g -O0 -fstack-usage $(shell curl-config --cflags)
 LDFLAGS =
 LIBS = $(shell curl-config --libs)
 
