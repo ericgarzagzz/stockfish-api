@@ -1,5 +1,7 @@
 #include "utils.h"
 #include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 size_t write_cb(void *ptr, size_t size, size_t nmemb, void *stream) {
 	size_t written = fwrite(ptr, size, nmemb, (FILE *)stream);
@@ -14,6 +16,22 @@ int ensure_directory_exists(const char *path) {
 			fprintf(stderr, "Failed to create directory %s: %s\n", path, strerror(errno));
 			return -1;
 		}
+	}
+	return 0;
+}
+
+int ensure_file_exists(const char *path) {
+	struct stat st = {0};
+
+	if (stat(path, &st) == -1) {
+		// Create an empty file
+		FILE* f = fopen(path, "w");
+		if (!f) {
+			fprintf(stderr, "Failed to create empty file %s: %s\n", path, strerror(errno));
+			return -1;
+		}
+
+		fclose(f);
 	}
 	return 0;
 }
@@ -47,4 +65,21 @@ bool parse_octal(const char* s, size_t size, ulong* value) {
 
 	/* Field did not end in space or null byte. */
 	return false;
+}
+
+
+char* construct_path(const char* rootdir, const char* name) {
+	size_t path_len = strlen(rootdir) + strlen(name) + 1;
+	if (path_len > PATH_MAX) {
+		fprintf(stderr, "The path cannot be more than %d characters long\n", PATH_MAX);
+		return NULL;
+	}
+	char *path = malloc(path_len);
+	if (!path) {
+		fprintf(stderr, "Failed to allocate memory for output path\n");
+		return NULL;
+	}
+	snprintf(path, path_len, "%s%s", rootdir, name);
+
+	return path;
 }
