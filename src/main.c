@@ -76,8 +76,7 @@ int main(int argc, char** argv) {
 	}
 
 	const char *rootdir = ".cache/";
-	//extract_tar(stockfish_tar_filename, rootdir);
-	extract_tar(".cache/test.tar", rootdir);
+	extract_tar(stockfish_tar_filename, rootdir);
 
 	return 0;
 }
