@@ -46,7 +46,10 @@ struct posix_header
 bool extract_tar_item(Arena *arena,
 		struct posix_header *hdr,
 		FILE *tar_file,
-		const char *rootdir);
-int extract_tar(const char* path, const char *rootdir);
+		const char *rootdir,
+		const char *regex_pattern);
+int extract_tar(const char* path,
+		const char *rootdir,
+		const char *regex_pattern);
 
 #endif

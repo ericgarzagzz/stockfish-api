@@ -2,6 +2,7 @@
 #include "utils.h"
 #include <assert.h>
 #include <linux/limits.h>
+#include <regex.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -13,7 +14,8 @@
 bool extract_tar_item(Arena *arena,
 		struct posix_header *hdr,
 		FILE *tar_file,
-		const char *rootdir) {
+		const char *rootdir,
+		const char *regex_pattern) {
 	char *output_path = arena_sprintf(arena, "%s%s", rootdir, hdr->name);
 
 	ulong file_size;
@@ -23,6 +25,31 @@ bool extract_tar_item(Arena *arena,
 		fprintf(stderr, "Failed to read the file size of one of the files inside "
 				"the tar ball\n");
 		return false;
+	}
+
+	/* Filter by regex pattern if provided (directories are always extracted) */
+	if (strlen(regex_pattern) > 0 && hdr->typeflag != DIRTYPE) {
+		regex_t regex;
+		int reti = regcomp(&regex, regex_pattern, REG_EXTENDED);
+		if (reti) {
+			fprintf(stderr, "Could not compile regex pattern\n");
+			return false;
+		}
+
+		reti = regexec(&regex, hdr->name, 0, NULL, 0);
+		regfree(&regex);
+
+		if (reti == REG_NOMATCH) {
+			/* Skip this file's data blocks if it's a regular file */
+			if (hdr->typeflag == REGTYPE || hdr->typeflag == AREGTYPE) {
+				size_t blocks = (file_size + 511) / 512;
+				fseek(tar_file, blocks * TAR_BLOCK_SIZE, SEEK_CUR);
+			}
+			return true;
+		} else if (reti) {
+			fprintf(stderr, "Regex match failed\n");
+			return false;
+		}
 	}
 
 	/* Switch for type flag matching */
@@ -109,7 +136,9 @@ bool extract_tar_item(Arena *arena,
 	return true;
 }
 
-int extract_tar(const char *path, const char *rootdir) {
+int extract_tar(const char* path,
+		const char *rootdir,
+		const char *regex_pattern) {
 	assert(rootdir[strlen(rootdir) - 1] == '/');
 
 	Arena arena = {0};
@@ -140,7 +169,7 @@ int extract_tar(const char *path, const char *rootdir) {
 			break;
 		}
 
-		if (!extract_tar_item(&arena, &hdr, f, rootdir)) {
+		if (!extract_tar_item(&arena, &hdr, f, rootdir, regex_pattern)) {
 			fprintf(stderr, "Failed to extract %s\n", hdr.name);
 			fclose(f);
 			return -1;

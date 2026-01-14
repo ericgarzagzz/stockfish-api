@@ -76,7 +76,8 @@ int main(int argc, char** argv) {
 	}
 
 	const char *rootdir = ".cache/";
-	extract_tar(stockfish_tar_filename, rootdir);
+	const char *regex_pattern = "stockfish/stockfish-ubuntu-x86-64";
+	extract_tar(stockfish_tar_filename, rootdir, regex_pattern);
 
 	return 0;
 }
