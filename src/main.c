@@ -6,7 +6,7 @@
 #include "tar.h"
 
 static const char *stockfish_tar_filename = ".cache/stockfish.tar";
-
+static const char *stockfish_exec_regex_pattern = "stockfish/stockfish-ubuntu-x86-64";
 
 int download_stockfish_executable() {
 	CURLcode result;
@@ -76,8 +76,7 @@ int main(int argc, char** argv) {
 	}
 
 	const char *rootdir = ".cache/";
-	const char *regex_pattern = "stockfish/stockfish-ubuntu-x86-64";
-	extract_tar(stockfish_tar_filename, rootdir, regex_pattern);
+	extract_tar(stockfish_tar_filename, rootdir, stockfish_exec_regex_pattern);
 
 	return 0;
 }
