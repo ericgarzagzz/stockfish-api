@@ -1,6 +1,7 @@
 #ifndef TAR_H
 #define TAR_H
 
+#include "arena.h"
 #include <stdio.h>
 #include <stdbool.h>
 
@@ -42,7 +43,10 @@ struct posix_header
 
 #define TAR_BLOCK_SIZE 512
 
-bool extract_tar_item(struct posix_header *hdr, FILE *tar_file, const char *rootdir);
+bool extract_tar_item(Arena *arena,
+		struct posix_header *hdr,
+		FILE *tar_file,
+		const char *rootdir);
 int extract_tar(const char* path, const char *rootdir);
 
 #endif
