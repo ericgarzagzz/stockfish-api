@@ -76,7 +76,10 @@ int main(int argc, char** argv) {
 	}
 
 	const char *rootdir = ".cache/";
-	extract_tar(stockfish_tar_filename, rootdir, stockfish_exec_regex_pattern);
+	if (extract_tar(stockfish_tar_filename, rootdir, stockfish_exec_regex_pattern) != 0) {
+		fprintf(stderr, "Failed extracting stockfish tarball at %s\n", stockfish_tar_filename);
+		return -1;
+	}
 
 	return 0;
 }
