@@ -79,6 +79,17 @@ bool extract_tar_item(Arena *arena,
 		}
 	} else if (hdr->typeflag == SYMTYPE) {
 		printf("Extracting soft link: %s -> %s...\n", hdr->name, hdr->linkname);
+		// The symbolic link file needs to be removed in order for symlink() to overwrite
+		if (check_file_accessible(output_path)) {
+			if (remove(output_path) != 0) {
+				fprintf(stderr, "Failed to overwrite output file\n");
+				return false;
+			}
+		}
+		if (symlink(hdr->linkname, output_path) != 0) {
+			fprintf(stderr, "Failed to extract soft link\n");
+			return false;
+		}
 	} else if (hdr->typeflag == CHRTYPE || hdr->typeflag == BLKTYPE) {
 		printf("Extracting special file: %s...\n", hdr->name);
 	} else if (hdr->typeflag == DIRTYPE) {
