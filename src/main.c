@@ -90,9 +90,15 @@ int main(int argc, char** argv) {
 		return -1;
 	}
 
-	int pipefds[2];
-	if (pipe(pipefds) == -1) {
-		fprintf(stderr, "Failed creating pipe\n");
+	int stdin_pipe[2]; // Parent writes to [1], child reads from [0]
+	if (pipe(stdin_pipe) == -1) {
+		fprintf(stderr, "Failed creating input pipe\n");
+		return -1;
+	}
+
+	int stdout_pipe[2]; // Child writes to [1], parent reads from [0]
+	if (pipe(stdout_pipe) == -1) {
+		fprintf(stderr, "Failed creating output pipe\n");
 		return -1;
 	}
 
@@ -100,19 +106,41 @@ int main(int argc, char** argv) {
 
 	if (pid == 0) {
 		printf("Calling from child\n");
-		dup2(pipefds[0], STDIN_FILENO);
-		close(pipefds[0]);
-		close(pipefds[1]);
+		dup2(stdin_pipe[0], STDIN_FILENO); // Redirect child's input
+		dup2(stdout_pipe[1], STDOUT_FILENO); // Redirect child's output
+
+		close(stdin_pipe[0]);
+		close(stdin_pipe[1]);
+		close(stdout_pipe[0]);
+		close(stdout_pipe[1]);
+
 		char* stockfish_argv[] = {(char*)stockfish_exec_path, NULL};
 		if (execvp(stockfish_argv[0], stockfish_argv) < 0) exit(0);
 	} else {
 		printf("Calling from parent\n");
 
-		// Write command to engine
-		dprintf(pipefds[1], "uci\n");
-		close(pipefds[1]);
+		// Close unused pipe ends
+		close(stdin_pipe[0]);
+		close(stdout_pipe[1]);
 
-		close(pipefds[0]);
+		// Write command to engine
+		dprintf(stdin_pipe[1], "uci\n");
+
+		// Read response from engine
+		char buff[512];
+		ssize_t n;
+		while ((n = read(stdout_pipe[0], buff, sizeof(buff) - 1)) > 0) {
+			buff[n] = '\0';
+			printf("Engine says: %s", buff);
+
+			if (strstr(buff, "uciok")) {
+				break;
+			}
+		}
+
+		close(stdin_pipe[1]);
+		close(stdout_pipe[0]);
+
 		waitpid(pid, NULL, 0);
 	}
 
