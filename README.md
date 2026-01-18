@@ -1,4 +1,4 @@
-# Stockfish API
+# Stockfish API (WIP)
 
 ## Prerequisites
 
