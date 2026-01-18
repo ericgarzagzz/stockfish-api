@@ -66,20 +66,3 @@ bool parse_octal(const char* s, size_t size, ulong* value) {
 	/* Field did not end in space or null byte. */
 	return false;
 }
-
-
-char* construct_path(const char* rootdir, const char* name) {
-	size_t path_len = strlen(rootdir) + strlen(name) + 1;
-	if (path_len > PATH_MAX) {
-		fprintf(stderr, "The path cannot be more than %d characters long\n", PATH_MAX);
-		return NULL;
-	}
-	char *path = malloc(path_len);
-	if (!path) {
-		fprintf(stderr, "Failed to allocate memory for output path\n");
-		return NULL;
-	}
-	snprintf(path, path_len, "%s%s", rootdir, name);
-
-	return path;
-}
