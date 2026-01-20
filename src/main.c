@@ -91,30 +91,34 @@ int main(int argc, char **argv) {
   }
 
   printf("Setting up stockfish...\n");
-  if (!check_file_accessible(stockfish_tar_filename)) {
-    printf("Downloading stockfish...\n");
-
-    int download_rc = download_stockfish_executable();
-
-    if (download_rc != CURLE_OK) {
-      return 1;
-    }
-
-    printf("Stockfish has been downloaded.\n");
-  }
-
-  const char *rootdir = ".cache/";
-  if (extract_tar(&tar_arena, stockfish_tar_filename, rootdir,
-                  stockfish_exec_regex_pattern) != 0) {
-    arena_free(&tar_arena);
-    fprintf(stderr, "Failed extracting stockfish tarball at %s\n",
-            stockfish_tar_filename);
-    return -1;
-  }
-  arena_free(&tar_arena);
 
   if (!check_file_accessible(stockfish_exec_path)) {
-    fprintf(stderr, "Failed accessing stockfish engine at %s\n",
+    if (!check_file_accessible(stockfish_tar_filename)) {
+      printf("Downloading stockfish...\n");
+
+      int download_rc = download_stockfish_executable();
+
+      if (download_rc != CURLE_OK) {
+        return 1;
+      }
+
+      printf("Stockfish has been downloaded.\n");
+    }
+
+    const char *rootdir = ".cache/";
+    if (extract_tar(&tar_arena, stockfish_tar_filename, rootdir,
+                    stockfish_exec_regex_pattern) != 0) {
+      arena_free(&tar_arena);
+      fprintf(stderr, "Failed extracting stockfish tarball at %s\n",
+              stockfish_tar_filename);
+      return -1;
+    }
+    arena_free(&tar_arena);
+  }
+
+  if (make_file_executable(stockfish_exec_path) == -1) {
+    fprintf(stderr,
+            "Failed setting executable permissions to stockfish engine at %s\n",
             stockfish_exec_path);
     return -1;
   }
