@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -62,6 +63,22 @@ int download_stockfish_executable() {
   curl_global_cleanup();
 
   return (int)result;
+}
+
+void send_command(int stdin_fd, int stdout_fd, const char *command,
+                  const char *exit_needle) {
+  dprintf(stdin_fd, "%s\n", command);
+
+  char buff[512];
+  ssize_t n;
+  while ((n = read(stdout_fd, buff, sizeof(buff) - 1)) > 0) {
+    buff[n] = '\0';
+    printf("Engine says: %s", buff);
+
+    if (strstr(buff, exit_needle)) {
+      break;
+    }
+  }
 }
 
 int main(int argc, char **argv) {
@@ -131,20 +148,12 @@ int main(int argc, char **argv) {
     close(stdin_pipe[0]);
     close(stdout_pipe[1]);
 
-    // Write command to engine
-    dprintf(stdin_pipe[1], "uci\n");
+    send_command(stdin_pipe[1], stdout_pipe[0], "uci", "uciok");
 
-    // Read response from engine
-    char buff[512];
-    ssize_t n;
-    while ((n = read(stdout_pipe[0], buff, sizeof(buff) - 1)) > 0) {
-      buff[n] = '\0';
-      printf("Engine says: %s", buff);
+    // Set start position
+    dprintf(stdin_pipe[1], "position startpos\n");
 
-      if (strstr(buff, "uciok")) {
-        break;
-      }
-    }
+    send_command(stdin_pipe[1], stdout_pipe[0], "isready", "readyok");
 
     close(stdin_pipe[1]);
     close(stdout_pipe[0]);
