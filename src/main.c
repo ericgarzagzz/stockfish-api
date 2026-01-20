@@ -1,3 +1,4 @@
+#include "arena.h"
 #include "tar.h"
 #include "utils.h"
 #include <curl/curl.h>
@@ -8,6 +9,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
+static Arena tar_arena = {0};
 
 static const char *stockfish_tar_filename = ".cache/stockfish.tar";
 static const char *stockfish_exec_regex_pattern =
@@ -101,12 +104,14 @@ int main(int argc, char **argv) {
   }
 
   const char *rootdir = ".cache/";
-  if (extract_tar(stockfish_tar_filename, rootdir,
+  if (extract_tar(&tar_arena, stockfish_tar_filename, rootdir,
                   stockfish_exec_regex_pattern) != 0) {
+    arena_free(&tar_arena);
     fprintf(stderr, "Failed extracting stockfish tarball at %s\n",
             stockfish_tar_filename);
     return -1;
   }
+  arena_free(&tar_arena);
 
   if (!check_file_accessible(stockfish_exec_path)) {
     fprintf(stderr, "Failed accessing stockfish engine at %s\n",

@@ -1,4 +1,5 @@
 #include "tar.h"
+#include "arena.h"
 #include "utils.h"
 #include <assert.h>
 #include <linux/limits.h>
@@ -8,7 +9,6 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include "arena.h"
 
 bool extract_tar_item(Arena *arena, struct posix_header *hdr, FILE *tar_file,
                       const char *rootdir, const char *regex_pattern) {
@@ -137,11 +137,9 @@ bool extract_tar_item(Arena *arena, struct posix_header *hdr, FILE *tar_file,
   return true;
 }
 
-int extract_tar(const char *path, const char *rootdir,
+int extract_tar(Arena *arena, const char *path, const char *rootdir,
                 const char *regex_pattern) {
   assert(rootdir[strlen(rootdir) - 1] == '/');
-
-  Arena arena = {0};
 
   printf("Extracting into rootdir: %s\n", rootdir);
 
@@ -164,12 +162,12 @@ int extract_tar(const char *path, const char *rootdir,
 
   struct posix_header hdr;
   while (fread(&hdr, TAR_BLOCK_SIZE, 1, f)) {
-    arena_reset(&arena);
+    arena_reset(arena);
     if (hdr.name[0] == '\0') {
       break;
     }
 
-    if (!extract_tar_item(&arena, &hdr, f, rootdir, regex_pattern)) {
+    if (!extract_tar_item(arena, &hdr, f, rootdir, regex_pattern)) {
       fprintf(stderr, "Failed to extract %s\n", hdr.name);
       fclose(f);
       return -1;
@@ -177,7 +175,6 @@ int extract_tar(const char *path, const char *rootdir,
   }
 
   fclose(f);
-  arena_free(&arena);
 
   return 0;
 }
