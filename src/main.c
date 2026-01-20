@@ -1,4 +1,5 @@
 #include "arena.h"
+#include "constants.h"
 #include "tar.h"
 #include "utils.h"
 #include <curl/curl.h>
@@ -11,12 +12,6 @@
 #include <unistd.h>
 
 static Arena tar_arena = {0};
-
-static const char *stockfish_tar_filename = ".cache/stockfish.tar";
-static const char *stockfish_exec_regex_pattern =
-    "stockfish/stockfish-ubuntu-x86-64";
-static const char *stockfish_exec_path =
-    ".cache/stockfish/stockfish-ubuntu-x86-64";
 
 int download_stockfish_executable() {
   CURLcode result;
@@ -52,7 +47,7 @@ int download_stockfish_executable() {
     return -1;
   }
 
-  stockfish_tar = fopen(stockfish_tar_filename, "wb");
+  stockfish_tar = fopen(STOCKFISH_TAR_FILENAME, "wb");
   if (stockfish_tar) {
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, stockfish_tar);
 
@@ -92,8 +87,8 @@ int main(int argc, char **argv) {
 
   printf("Setting up stockfish...\n");
 
-  if (!check_file_accessible(stockfish_exec_path)) {
-    if (!check_file_accessible(stockfish_tar_filename)) {
+  if (!check_file_accessible(STOCKFISH_EXEC_PATH)) {
+    if (!check_file_accessible(STOCKFISH_TAR_FILENAME)) {
       printf("Downloading stockfish...\n");
 
       int download_rc = download_stockfish_executable();
@@ -106,20 +101,20 @@ int main(int argc, char **argv) {
     }
 
     const char *rootdir = ".cache/";
-    if (extract_tar(&tar_arena, stockfish_tar_filename, rootdir,
-                    stockfish_exec_regex_pattern) != 0) {
+    if (extract_tar(&tar_arena, STOCKFISH_TAR_FILENAME, rootdir,
+                    STOCKFISH_EXEC_REGEX_PATTERN) != 0) {
       arena_free(&tar_arena);
       fprintf(stderr, "Failed extracting stockfish tarball at %s\n",
-              stockfish_tar_filename);
+              STOCKFISH_TAR_FILENAME);
       return -1;
     }
     arena_free(&tar_arena);
   }
 
-  if (make_file_executable(stockfish_exec_path) == -1) {
+  if (make_file_executable(STOCKFISH_EXEC_PATH) == -1) {
     fprintf(stderr,
             "Failed setting executable permissions to stockfish engine at %s\n",
-            stockfish_exec_path);
+            STOCKFISH_EXEC_PATH);
     return -1;
   }
 
@@ -147,7 +142,7 @@ int main(int argc, char **argv) {
     close(stdout_pipe[0]);
     close(stdout_pipe[1]);
 
-    char *stockfish_argv[] = {(char *)stockfish_exec_path, NULL};
+    char *stockfish_argv[] = {STOCKFISH_EXEC_PATH, NULL};
     if (execvp(stockfish_argv[0], stockfish_argv) < 0)
       exit(0);
   } else {
