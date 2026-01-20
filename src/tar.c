@@ -8,7 +8,6 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#define ARENA_IMPLEMENTATION
 #include "arena.h"
 
 bool extract_tar_item(Arena *arena, struct posix_header *hdr, FILE *tar_file,
